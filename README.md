@@ -1,6 +1,10 @@
 # SLACKWATER — a tactical FPS at the harbor
 
-A round-based tactical shooter in the style Counter-Strike made famous,
+[![make.fun · threejs-fps-02](https://make.fun/badge/threejs-fps-02.svg)](https://make.fun/bounty/threejs-fps-02?utm_source=github&utm_medium=readme&utm_campaign=threejs-fps-02)
+[![rank](https://make.fun/badge/threejs-fps-02/cupucepu/slackwater/rank.svg)](https://make.fun/bounty/threejs-fps-02/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=threejs-fps-02)
+[![reward](https://make.fun/badge/threejs-fps-02/cupucepu/slackwater/reward.svg)](https://make.fun/bounty/threejs-fps-02?utm_source=github&utm_medium=readme&utm_campaign=threejs-fps-02)
+
+Built for the [threejs-fps-02 bounty on make.fun](https://make.fun/bounty/threejs-fps-02) — a round-based tactical shooter in the style Counter-Strike made famous,
 built on three.js 0.187.0 (vendored, no build step, no network). You are
 **Harbor Guard** — grab the glowing core from the basin and carry it to
 your dock, or eliminate the **Salvage Crew**. The tide rises and falls
