@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SLACKWATER — a tactical FPS at the harbor</title>
+<style>
+  :root {
+    --ink: #eef4f2;
+    --muted: #9db8b4;
+    --accent: #ffb347;
+    --teal: #66ffe0;
+    --danger: #e0457b;
+    --panel: rgba(10, 22, 28, 0.82);
+    --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-readout: ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0e1a24; color: var(--ink); font-family: var(--font-ui); }
+  canvas { position: fixed; inset: 0; display: block; }
+  #hud { position: fixed; inset: 0; pointer-events: none; }
+
+  #crosshair { position: fixed; left: 50%; top: 50%; width: 0; height: 0; }
+  #crosshair i { position: absolute; background: var(--ink); opacity: .9; box-shadow: 0 0 2px #000; }
+  #crosshair i:nth-child(1) { left: -1px; top: -13px; width: 2px; height: 7px; }
+  #crosshair i:nth-child(2) { left: -1px; top: 6px; width: 2px; height: 7px; }
+  #crosshair i:nth-child(3) { top: -1px; left: -13px; height: 2px; width: 7px; }
+  #crosshair i:nth-child(4) { top: -1px; left: 6px; height: 2px; width: 7px; }
+  #crosshair::after { content: ''; position: absolute; left: -1px; top: -1px; width: 2px; height: 2px; background: var(--accent); }
+
+  #topbar { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); text-align: center; font-family: var(--font-readout); }
+  #timer { font-size: 34px; font-weight: 600; letter-spacing: .04em; text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+  #score { font-size: 15px; color: var(--muted); margin-top: 2px; }
+  #score b { color: var(--ink); }
+  #tide { position: fixed; top: 18px; left: 24px; font-family: var(--font-readout); font-size: 14px; letter-spacing: .1em; color: var(--teal); text-shadow: 0 1px 4px rgba(0,0,0,.8); }
+  #map { position: fixed; top: 46px; left: 24px; width: 160px; height: 160px; border: 1px solid #24404a; border-radius: 4px; background: #101c22; opacity: .92; }
+  #board { position: fixed; left: 50%; top: 18%; transform: translateX(-50%); display: none; width: min(560px, 90vw); padding: 18px 22px; background: var(--panel); border: 1px solid #24404a; border-radius: 6px; font-family: var(--font-readout); }
+  #board .bteam { margin: 6px 0; }
+  #board .bhead { font-size: 14px; letter-spacing: .08em; margin-bottom: 4px; }
+  #board .brow { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--ink); padding: 2px 0; }
+  #board .brow span:first-child { flex: 1; }
+  #feed { position: fixed; top: 18px; right: 24px; text-align: right; font-family: var(--font-readout); font-size: 13px; line-height: 1.7; color: var(--ink); text-shadow: 0 1px 4px rgba(0,0,0,.8); white-space: pre-line; }
+
+  #vitals { position: fixed; left: 24px; bottom: 22px; font-family: var(--font-readout); }
+  #hp { font-size: 44px; line-height: 1; text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+  #hp-label { font-size: 12px; color: var(--muted); letter-spacing: .14em; }
+  #loadout { position: fixed; right: 28px; bottom: 22px; text-align: right; font-family: var(--font-readout); }
+  #ammo { font-size: 30px; line-height: 1.2; text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+  #money { font-size: 18px; color: var(--accent); margin-top: 2px; }
+
+  #msg { position: fixed; left: 50%; top: 26%; transform: translateX(-50%); text-align: center; font-size: 26px; font-weight: 600; line-height: 1.5; white-space: pre-line; text-shadow: 0 2px 12px rgba(0,0,0,.9); }
+  #hit { position: fixed; inset: 0; opacity: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(224,69,123,.55) 100%); }
+
+  #click { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(10, 22, 28, 0.78); cursor: pointer; }
+  #click .panel { width: min(560px, 100%); padding: 34px; background: var(--panel); border: 1px solid #24404a; border-radius: 6px; }
+  #click h1 { margin: 0 0 6px; font-size: 44px; line-height: 1; letter-spacing: .02em; }
+  #click h1 span { color: var(--accent); }
+  #click p { margin: 0 0 20px; font-size: 15px; line-height: 1.55; color: var(--muted); }
+  #click p b { color: var(--ink); }
+  #click .play { display: inline-block; font-weight: 600; font-size: 16px; padding: 13px 22px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent); color: #0e1a24; }
+  .keys { margin: 22px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; color: var(--muted); }
+  .keys li { display: flex; align-items: center; gap: 6px; }
+  kbd { min-width: 22px; padding: 2px 6px; border: 1px solid #24404a; border-radius: 4px; font-family: var(--font-readout); font-size: 11px; color: var(--ink); text-align: center; }
+</style>
+</head>
+<body>
+<div id="hud" aria-hidden="true">
+  <div id="crosshair"><i></i><i></i><i></i><i></i></div>
+  <div id="topbar"><div id="timer">--</div><div id="score">HG 0 — 0 SC</div></div>
+  <div id="tide">TIDE MID</div>
+  <canvas id="map" width="160" height="160"></canvas>
+  <div id="board"></div>
+  <div id="feed"></div>
+  <div id="vitals"><div id="hp-label">HEALTH</div><div id="hp">100</div></div>
+  <div id="loadout"><div id="ammo">12 / 48 Pier .9</div><div id="money">$800</div></div>
+  <div id="msg"></div>
+  <div id="hit"></div>
+</div>
+
+<div id="click">
+  <div class="panel">
+    <h1>SLACK<span>WATER</span></h1>
+    <p>A round-based tactical shooter at a working harbor. You are <b>Harbor Guard</b> — grab the glowing core from the basin and carry it to your dock, or eliminate the <b>Salvage Crew</b>. The tide rises and falls every round, flooding the channel and slowing the wade. First to 5 rounds takes the harbor.</p>
+    <span class="play">Click to play</span>
+    <ul class="keys">
+      <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</li>
+      <li><kbd>Mouse</kbd> Look</li>
+      <li><kbd>Click</kbd> Fire</li>
+      <li><kbd>R</kbd> Reload</li>
+      <li><kbd>Shift</kbd> Walk slow</li>
+      <li><kbd>Space</kbd> Jump</li>
+      <li><kbd>1</kbd>–<kbd>4</kbd> Buy / switch weapon</li>
+      <li><kbd>Tab</kbd> Scoreboard (hold)</li>
+    </ul>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.min.js"
+  }
+}
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
